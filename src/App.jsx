@@ -81,6 +81,7 @@ function Router() {
 // ═════════════════════════════════════════════════════════════════════════════
 function Main({ view, setView }) {
   const { dark, setDark, toast } = useApp();
+  const [searchTo, setSearchTo] = useState("");
 
   return (
     <div className="fade-in">
@@ -118,11 +119,11 @@ function Main({ view, setView }) {
       </div>
 
       <div style={{ paddingBottom: 70 }}>
-        {view === "home" && <HomePage setView={setView} />}
-        {view === "rides" && <RidesPage />}
+        {view === "home" && <HomePage setView={setView} setSearchTo={setSearchTo} />}
+        {view === "rides" && <RidesPage initialTo={searchTo} />}
         {view === "drivers" && <DriversPage />}
         {view === "shops" && <ShopsPage />}
-        {view === "routes" && <RoutesPage />}
+        {view === "routes" && <RoutesPage initialSearch={searchTo} />}
         {view === "register" && <RegisterPage />}
       </div>
 
@@ -165,7 +166,7 @@ function Main({ view, setView }) {
 }
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
-function HomePage({ setView }) {
+function HomePage({ setView, setSearchTo }) {
   const { routes, drivers, shops } = useApp();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -173,7 +174,7 @@ function HomePage({ setView }) {
   const destinations = useMemo(() => [...new Set(routes.map(r => r.to))].sort(), [routes]);
   const origins = useMemo(() => [...new Set(routes.map(r => r.from))].sort(), [routes]);
 
-  const search = () => { if (to) setView("routes"); };
+  const search = () => { setSearchTo(to); setView("rides"); };
 
   return (
     <>
@@ -253,9 +254,9 @@ function HomePage({ setView }) {
 }
 
 // ─── ROUTES PAGE ──────────────────────────────────────────────────────────────
-function RoutesPage() {
+function RoutesPage({ initialSearch = "" }) {
   const { routes } = useApp();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
 
   const filtered = useMemo(() => {
     if (!search) return routes;
@@ -280,9 +281,9 @@ function RoutesPage() {
 }
 
 // ─── RIDES / FIND RIDE PAGE ───────────────────────────────────────────────────
-function RidesPage() {
+function RidesPage({ initialTo = "" }) {
   const { drivers, routes } = useApp();
-  const [to, setTo] = useState("");
+  const [to, setTo] = useState(initialTo);
 
   const destinations = useMemo(() => [...new Set([...routes.map(r => r.to), ...drivers.map(d => d.to)])].sort(), [routes, drivers]);
   const available = useMemo(() => {
@@ -366,9 +367,33 @@ function DriverCard({ driver: d }) {
 }
 
 // ─── ROUTE CARD (with map) ─────────────────────────────────────────────────────
+// Harare area coordinates for OpenStreetMap
+const AREA_COORDS = {
+  "Chitungwiza": { lat: -18.0127, lon: 31.0755 },
+  "Budiriro": { lat: -17.8650, lon: 30.9830 },
+  "Glen View": { lat: -17.8700, lon: 30.9700 },
+  "Highfield": { lat: -17.8560, lon: 30.9900 },
+  "Mbare": { lat: -17.8530, lon: 31.0420 },
+  "Epworth": { lat: -17.8900, lon: 31.1200 },
+  "Borrowdale": { lat: -17.7600, lon: 31.0900 },
+  "Mt Pleasant": { lat: -17.7800, lon: 31.0500 },
+  "Norton": { lat: -17.8830, lon: 30.7000 },
+  "Ruwa": { lat: -17.8900, lon: 31.2300 },
+  "Dzivarasekwa": { lat: -17.8000, lon: 30.9400 },
+  "Warren Park": { lat: -17.8300, lon: 30.9700 },
+  "Hatfield": { lat: -17.8200, lon: 31.0700 },
+  "Waterfalls": { lat: -17.8600, lon: 31.0200 },
+  "Greendale": { lat: -17.8000, lon: 31.1000 },
+  "Marlborough": { lat: -17.7700, lon: 30.9600 },
+  "Avondale": { lat: -17.7900, lon: 31.0300 },
+  "Town (CBD)": { lat: -17.8292, lon: 31.0522 },
+};
+const DEFAULT_COORDS = { lat: -17.8292, lon: 31.0522 }; // Harare CBD
+
 function RouteCard({ route: r }) {
   const [showMap, setShowMap] = useState(false);
-  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(r.to + ", Harare, Zimbabwe")}&output=embed`;
+  const coords = AREA_COORDS[r.to] || DEFAULT_COORDS;
+  const osmSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lon - 0.03},${coords.lat - 0.02},${coords.lon + 0.03},${coords.lat + 0.02}&layer=mapnik&marker=${coords.lat},${coords.lon}`;
 
   return (
     <div className="route-card">
@@ -396,19 +421,19 @@ function RouteCard({ route: r }) {
         </a>
       </div>
 
-      {/* Embedded Map */}
+      {/* Embedded OpenStreetMap */}
       {showMap && (
         <div style={{ marginTop: 12, borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
           <iframe
-            src={mapSrc}
+            src={osmSrc}
             width="100%"
             height="250"
             style={{ border: 0, display: "block" }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
             title={`Map: ${r.to}`}
           />
+          <div style={{ padding: "6px 10px", background: "#f8fafc", fontSize: 11, color: "#6b7280", textAlign: "right" }}>
+            <a href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lon}#map=14/${coords.lat}/${coords.lon}`} target="_blank" rel="noopener noreferrer" style={{ color: "#0056D2" }}>View larger map</a>
+          </div>
         </div>
       )}
     </div>
