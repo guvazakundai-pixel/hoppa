@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, createContext, useContext } 
    "Hoppa ride. Hoppa shop. Hoppa deal."
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-const CFG = { name: "Hoppa", tagline: "Find Rides, Shops & Services", wa: "263781138456", adminPw: "hoppa2024" };
+const CFG = { name: "Hoppa", tagline: "Find Rides, Shops & Services", wa: "263785629712", adminPw: "hoppa2024" };
 const waLink = (m) => `https://wa.me/${CFG.wa}?text=${encodeURIComponent(m)}`;
 const waDriver = (d) => `https://wa.me/${d.phone}?text=${encodeURIComponent(`Hi ${d.name}, I need a ride from ${d.from} to ${d.to}. Are you available?`)}`;
 const waShop = (s) => `https://wa.me/${s.phone}?text=${encodeURIComponent(`Hi, I found ${s.name} on Hoppa. I'd like to know more about your services.`)}`;
