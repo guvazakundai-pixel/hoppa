@@ -8,6 +8,7 @@ import { useState, useEffect, useMemo, useCallback, createContext, useContext } 
 const CFG = { name: "Hoppa", tagline: "Find Rides, Shops & Services", wa: "263785629712", adminPw: "hoppa2024" };
 const waLink = (m) => `https://wa.me/${CFG.wa}?text=${encodeURIComponent(m)}`;
 const waDriver = (d) => `https://wa.me/${d.phone}?text=${encodeURIComponent(`Hi ${d.name}, I need a ride from ${d.from} to ${d.to}. Are you available?`)}`;
+const mapsLink = (from, to) => `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from + ", Harare, Zimbabwe")}&destination=${encodeURIComponent(to + ", Harare, Zimbabwe")}&travelmode=driving`;
 const waShop = (s) => `https://wa.me/${s.phone}?text=${encodeURIComponent(`Hi, I found ${s.name} on Hoppa. I'd like to know more about your services.`)}`;
 
 // ─── Local Storage ────────────────────────────────────────────────────────────
@@ -271,23 +272,7 @@ function RoutesPage() {
         <input className="search-box__input" placeholder="Search routes, destinations, stops..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 500 }} />
       </div>
       <div className="listings__grid">
-        {filtered.map(r => (
-          <div key={r.id} className="route-card">
-            <div className="route-card__header">
-              <div className="route-card__route">{r.from} &#8594; {r.to}</div>
-              <div className="route-card__fare">${r.fare.toFixed(2)}</div>
-            </div>
-            <div className="route-card__rank">&#128205; Rank: {r.rank}</div>
-            {r.via && <div className="route-card__stops">Via: {r.via}</div>}
-            {r.stops && <div className="route-card__stops">Stops: {r.stops}</div>}
-            <div className="route-card__meta">
-              <span>&#9200; {r.time}</span>
-              {r.peak && <span>&#128293; Peak: {r.peak}</span>}
-              {r.fareZig && <span>ZiG {r.fareZig}</span>}
-            </div>
-            {r.notes && <div style={{ fontSize: 12, color: "#0056D2", marginTop: 6, fontWeight: 600 }}>{r.notes}</div>}
-          </div>
-        ))}
+        {filtered.map(r => <RouteCard key={r.id} route={r} />)}
       </div>
       {filtered.length === 0 && <div className="empty"><div className="empty__icon">&#128652;</div><div className="empty__text">No routes found. Try a different search.</div></div>}
     </div>
@@ -330,16 +315,7 @@ function RidesPage() {
         <>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>&#128652; Kombi Routes</h3>
           <div className="listings__grid" style={{ marginBottom: 24 }}>
-            {matchingRoutes.map(r => (
-              <div key={r.id} className="route-card">
-                <div className="route-card__header">
-                  <div className="route-card__route">{r.from} &#8594; {r.to}</div>
-                  <div className="route-card__fare">${r.fare.toFixed(2)}</div>
-                </div>
-                <div className="route-card__rank">&#128205; {r.rank}</div>
-                <div className="route-card__meta"><span>&#9200; {r.time}</span></div>
-              </div>
-            ))}
+            {matchingRoutes.map(r => <RouteCard key={r.id} route={r} />)}
           </div>
         </>
       )}
@@ -385,6 +361,56 @@ function DriverCard({ driver: d }) {
         <a className="ride-card__wa" href={waDriver(d)} target="_blank" rel="noopener noreferrer">&#128172; WhatsApp</a>
         {d.phone && <a className="ride-card__call" href={`tel:${d.phone}`}>Call</a>}
       </div>
+    </div>
+  );
+}
+
+// ─── ROUTE CARD (with map) ─────────────────────────────────────────────────────
+function RouteCard({ route: r }) {
+  const [showMap, setShowMap] = useState(false);
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(r.to + ", Harare, Zimbabwe")}&output=embed`;
+
+  return (
+    <div className="route-card">
+      <div className="route-card__header">
+        <div className="route-card__route">{r.from} &#8594; {r.to}</div>
+        <div className="route-card__fare">${r.fare?.toFixed(2)}</div>
+      </div>
+      <div className="route-card__rank">&#128205; Rank: {r.rank}</div>
+      {r.via && <div className="route-card__stops">Via: {r.via}</div>}
+      {r.stops && <div className="route-card__stops">Stops: {r.stops}</div>}
+      <div className="route-card__meta">
+        <span>&#9200; {r.time}</span>
+        {r.peak && <span>&#128293; Peak: {r.peak}</span>}
+        {r.fareZig > 0 && <span>ZiG {r.fareZig}</span>}
+      </div>
+      {r.notes && <div style={{ fontSize: 12, color: "#0056D2", marginTop: 6, fontWeight: 600 }}>{r.notes}</div>}
+
+      {/* Map Actions */}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <button onClick={() => setShowMap(!showMap)} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: showMap ? "#EEF4FF" : "#fff", color: showMap ? "#0056D2" : "#4b5563", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
+          &#128506; {showMap ? "Hide Map" : "Show Map"}
+        </button>
+        <a href={mapsLink(r.rank || r.from, r.to)} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: "10px", borderRadius: 10, background: "#0056D2", color: "#fff", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, textDecoration: "none" }}>
+          &#128663; Get Directions
+        </a>
+      </div>
+
+      {/* Embedded Map */}
+      {showMap && (
+        <div style={{ marginTop: 12, borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+          <iframe
+            src={mapSrc}
+            width="100%"
+            height="250"
+            style={{ border: 0, display: "block" }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={`Map: ${r.to}`}
+          />
+        </div>
+      )}
     </div>
   );
 }
