@@ -82,7 +82,36 @@ a { text-decoration: none; color: inherit; }
   margin-bottom: 12px; letter-spacing: -1px;
 }
 .hero h1 em { font-style: normal; color: #0056D2; }
-@media (max-width: 640px) { .hero h1 { font-size: 28px; } }
+@media (max-width: 640px) {
+  .hero h1 { font-size: 24px; letter-spacing: -0.5px; }
+  .hero { padding: 24px 12px 12px; }
+  .hero__sub { font-size: 14px; }
+  .search-box { padding: 14px; margin: 0 4px; }
+  .search-box__input { height: 40px; font-size: 14px; }
+  .search-box__btn { padding: 12px; font-size: 14px; }
+  .categories { padding: 20px 12px; }
+  .categories__title { font-size: 17px; }
+  .listings { padding: 0 12px 24px; }
+  .listings__title { font-size: 17px; }
+  .how-it-works { padding: 24px 12px; }
+  .how-it-works__title { font-size: 20px; }
+  .stats { padding: 0 12px 24px; }
+  .stat-card { padding: 14px; }
+  .stat-card__value { font-size: 22px; }
+  .route-card { padding: 14px; }
+  .route-card__route { font-size: 14px; }
+  .route-card__fare { font-size: 16px; }
+  .ride-card { padding: 14px; }
+  .shop-card { padding: 14px; }
+  .register { padding: 20px 12px; }
+  .register__card { padding: 20px; }
+  .footer { padding: 24px 12px 12px; }
+  .footer__inner { gap: 20px; }
+  .nav { padding: 0 10px; }
+  .nav__inner { height: 50px; gap: 8px; }
+  .nav__logo { font-size: 18px; }
+  .nav__logo svg { width: 28px; height: 28px; }
+}
 .hero__sub {
   font-size: 16px; color: #6b7280; max-width: 500px;
   margin: 0 auto 24px; line-height: 1.5;
@@ -140,7 +169,7 @@ a { text-decoration: none; color: inherit; }
 .categories__grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
 }
-@media (max-width: 640px) { .categories__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .categories__grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } .cat-card { padding: 14px 10px; } .cat-card__icon { font-size: 24px; } .cat-card__name { font-size: 12px; } }
 .cat-card {
   background: #fff; border-radius: 14px; padding: 20px 16px;
   border: 1px solid #eee; text-align: center;

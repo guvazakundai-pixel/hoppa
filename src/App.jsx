@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, createContext, useContext } from "react";
+import L from "leaflet";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    HOPPA — Find Rides, Shops & Services in Harare
@@ -8,7 +9,6 @@ import { useState, useEffect, useMemo, useCallback, createContext, useContext } 
 const CFG = { name: "Hoppa", tagline: "Find Rides, Shops & Services", wa: "263785629712", adminPw: "hoppa2024" };
 const waLink = (m) => `https://wa.me/${CFG.wa}?text=${encodeURIComponent(m)}`;
 const waDriver = (d) => `https://wa.me/${d.phone}?text=${encodeURIComponent(`Hi ${d.name}, I need a ride from ${d.from} to ${d.to}. Are you available?`)}`;
-const mapsLink = (from, to) => `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from + ", Harare, Zimbabwe")}&destination=${encodeURIComponent(to + ", Harare, Zimbabwe")}&travelmode=driving`;
 const waShop = (s) => `https://wa.me/${s.phone}?text=${encodeURIComponent(`Hi, I found ${s.name} on Hoppa. I'd like to know more about your services.`)}`;
 
 // ─── Local Storage ────────────────────────────────────────────────────────────
@@ -366,34 +366,70 @@ function DriverCard({ driver: d }) {
   );
 }
 
-// ─── ROUTE CARD (with map) ─────────────────────────────────────────────────────
-// Harare area coordinates for OpenStreetMap
+// ─── ROUTE CARD (with inline Leaflet map) ─────────────────────────────────────
 const AREA_COORDS = {
-  "Chitungwiza": { lat: -18.0127, lon: 31.0755 },
-  "Budiriro": { lat: -17.8650, lon: 30.9830 },
-  "Glen View": { lat: -17.8700, lon: 30.9700 },
-  "Highfield": { lat: -17.8560, lon: 30.9900 },
-  "Mbare": { lat: -17.8530, lon: 31.0420 },
-  "Epworth": { lat: -17.8900, lon: 31.1200 },
-  "Borrowdale": { lat: -17.7600, lon: 31.0900 },
-  "Mt Pleasant": { lat: -17.7800, lon: 31.0500 },
-  "Norton": { lat: -17.8830, lon: 30.7000 },
-  "Ruwa": { lat: -17.8900, lon: 31.2300 },
-  "Dzivarasekwa": { lat: -17.8000, lon: 30.9400 },
-  "Warren Park": { lat: -17.8300, lon: 30.9700 },
-  "Hatfield": { lat: -17.8200, lon: 31.0700 },
-  "Waterfalls": { lat: -17.8600, lon: 31.0200 },
-  "Greendale": { lat: -17.8000, lon: 31.1000 },
-  "Marlborough": { lat: -17.7700, lon: 30.9600 },
-  "Avondale": { lat: -17.7900, lon: 31.0300 },
-  "Town (CBD)": { lat: -17.8292, lon: 31.0522 },
+  "Chitungwiza": [-18.0127, 31.0755],
+  "Budiriro": [-17.8650, 30.9830],
+  "Glen View": [-17.8700, 30.9700],
+  "Highfield": [-17.8560, 30.9900],
+  "Mbare": [-17.8530, 31.0420],
+  "Epworth": [-17.8900, 31.1200],
+  "Borrowdale": [-17.7600, 31.0900],
+  "Mt Pleasant": [-17.7800, 31.0500],
+  "Norton": [-17.8830, 30.7000],
+  "Ruwa": [-17.8900, 31.2300],
+  "Dzivarasekwa": [-17.8000, 30.9400],
+  "Warren Park": [-17.8300, 30.9700],
+  "Hatfield": [-17.8200, 31.0700],
+  "Waterfalls": [-17.8600, 31.0200],
+  "Greendale": [-17.8000, 31.1000],
+  "Marlborough": [-17.7700, 30.9600],
+  "Avondale": [-17.7900, 31.0300],
+  "Town (CBD)": [-17.8292, 31.0522],
 };
-const DEFAULT_COORDS = { lat: -17.8292, lon: 31.0522 }; // Harare CBD
+const CBD = [-17.8292, 31.0522];
+
+function RouteMap({ from, to }) {
+  const mapRef = useRef(null);
+  const containerRef = useRef(null);
+  const origin = AREA_COORDS[from] || CBD;
+  const dest = AREA_COORDS[to] || CBD;
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false });
+    mapRef.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Origin marker (blue)
+    L.circleMarker(origin, { radius: 8, color: "#0056D2", fillColor: "#0056D2", fillOpacity: 1, weight: 2 })
+      .addTo(map).bindPopup(`<b>Pickup:</b> ${from}`);
+
+    // Destination marker (green)
+    L.circleMarker(dest, { radius: 8, color: "#059669", fillColor: "#059669", fillOpacity: 1, weight: 2 })
+      .addTo(map).bindPopup(`<b>Destination:</b> ${to}`);
+
+    // Route line
+    L.polyline([origin, dest], { color: "#0056D2", weight: 3, opacity: 0.7, dashArray: "8, 8" }).addTo(map);
+
+    // Fit bounds to show both markers
+    const bounds = L.latLngBounds([origin, dest]);
+    map.fitBounds(bounds, { padding: [30, 30] });
+
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    return () => { map.remove(); mapRef.current = null; };
+  }, [from, to]);
+
+  return <div ref={containerRef} style={{ width: "100%", height: 220, borderRadius: 10 }} />;
+}
 
 function RouteCard({ route: r }) {
   const [showMap, setShowMap] = useState(false);
-  const coords = AREA_COORDS[r.to] || DEFAULT_COORDS;
-  const osmSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lon - 0.03},${coords.lat - 0.02},${coords.lon + 0.03},${coords.lat + 0.02}&layer=mapnik&marker=${coords.lat},${coords.lon}`;
 
   return (
     <div className="route-card">
@@ -411,28 +447,19 @@ function RouteCard({ route: r }) {
       </div>
       {r.notes && <div style={{ fontSize: 12, color: "#0056D2", marginTop: 6, fontWeight: 600 }}>{r.notes}</div>}
 
-      {/* Map Actions */}
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={() => setShowMap(!showMap)} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: showMap ? "#EEF4FF" : "#fff", color: showMap ? "#0056D2" : "#4b5563", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
-          &#128506; {showMap ? "Hide Map" : "Show Map"}
+      <div style={{ marginTop: 12 }}>
+        <button onClick={() => setShowMap(!showMap)} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1.5px solid #e5e7eb", background: showMap ? "#EEF4FF" : "#fff", color: showMap ? "#0056D2" : "#4b5563", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
+          &#128506; {showMap ? "Hide Map" : "View Route on Map"}
         </button>
-        <a href={mapsLink(r.rank || r.from, r.to)} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: "10px", borderRadius: 10, background: "#0056D2", color: "#fff", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, textDecoration: "none" }}>
-          &#128663; Get Directions
-        </a>
       </div>
 
-      {/* Embedded OpenStreetMap */}
       {showMap && (
-        <div style={{ marginTop: 12, borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-          <iframe
-            src={osmSrc}
-            width="100%"
-            height="250"
-            style={{ border: 0, display: "block" }}
-            title={`Map: ${r.to}`}
-          />
-          <div style={{ padding: "6px 10px", background: "#f8fafc", fontSize: 11, color: "#6b7280", textAlign: "right" }}>
-            <a href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lon}#map=14/${coords.lat}/${coords.lon}`} target="_blank" rel="noopener noreferrer" style={{ color: "#0056D2" }}>View larger map</a>
+        <div style={{ marginTop: 10, borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+          <RouteMap from={r.from} to={r.to} />
+          <div style={{ padding: "8px 12px", background: "#f8fafc", display: "flex", gap: 8, fontSize: 12 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: "50%", background: "#0056D2", display: "inline-block" }} /> Pickup</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: "50%", background: "#059669", display: "inline-block" }} /> Destination</span>
+            <span style={{ marginLeft: "auto", color: "#0056D2", borderBottom: "1px dashed #0056D2" }}>- - Route</span>
           </div>
         </div>
       )}
