@@ -85,7 +85,14 @@ function Main({ view, setView }) {
     <div className="fade-in">
       <nav className="nav">
         <div className="nav__inner">
-          <div className="nav__logo" onClick={() => setView("home")} style={{ cursor: "pointer" }}>
+          <div className="nav__logo" onClick={() => setView("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="64" height="64" rx="14" fill="url(#lg)"/>
+              <circle cx="32" cy="22" r="8" stroke="#fff" strokeWidth="3" fill="none"/>
+              <path d="M32 30C18 30 14 44 14 48h36c0-4-4-18-18-18z" stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none"/>
+              <path d="M32 14v-2M30 14h4l-2-3z" fill="#fff"/>
+              <defs><linearGradient id="lg" x1="0" y1="0" x2="64" y2="64"><stop stopColor="#0056D2"/><stop offset="1" stopColor="#2563EB"/></linearGradient></defs>
+            </svg>
             Hoppa <span>Harare</span>
           </div>
           <div className="nav__spacer" />
@@ -103,7 +110,7 @@ function Main({ view, setView }) {
       {/* Mobile Bottom Nav */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: dark ? "#1a1a2e" : "#fff", borderTop: `1px solid ${dark ? "#2d2d44" : "#eee"}`, display: "flex", padding: "6px 0" }} className="show-mobile-only">
         {[{ id: "home", icon: "\u2302", label: "Home" }, { id: "rides", icon: "\uD83D\uDE90", label: "Rides" }, { id: "routes", icon: "\uD83D\uDDFA", label: "Routes" }, { id: "shops", icon: "\uD83C\uDFEA", label: "Shops" }, { id: "register", icon: "\u270E", label: "Join" }].map(t => (
-          <button key={t.id} onClick={() => setView(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 10, fontWeight: 600, color: view === t.id ? "#FF6B00" : "#9ca3af", background: "none", border: "none", padding: "4px 0" }}>
+          <button key={t.id} onClick={() => setView(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 10, fontWeight: 600, color: view === t.id ? "#0056D2" : "#9ca3af", background: "none", border: "none", padding: "4px 0" }}>
             <span style={{ fontSize: 18 }}>{t.icon}</span>{t.label}
           </button>
         ))}
@@ -278,7 +285,7 @@ function RoutesPage() {
               {r.peak && <span>&#128293; Peak: {r.peak}</span>}
               {r.fareZig && <span>ZiG {r.fareZig}</span>}
             </div>
-            {r.notes && <div style={{ fontSize: 12, color: "#FF6B00", marginTop: 6, fontWeight: 600 }}>{r.notes}</div>}
+            {r.notes && <div style={{ fontSize: 12, color: "#0056D2", marginTop: 6, fontWeight: 600 }}>{r.notes}</div>}
           </div>
         ))}
       </div>
@@ -547,7 +554,10 @@ function Login({ onAuth, onBack }) {
   return (
     <div className="login">
       <form className="login__card" onSubmit={e => { e.preventDefault(); pw === CFG.adminPw ? onAuth() : setErr("Wrong password"); }}>
-        <div className="login__logo">Hoppa</div>
+        <div className="login__logo" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <svg width="36" height="36" viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="url(#lg2)"/><circle cx="32" cy="22" r="8" stroke="#fff" strokeWidth="3" fill="none"/><path d="M32 30C18 30 14 44 14 48h36c0-4-4-18-18-18z" stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none"/><defs><linearGradient id="lg2" x1="0" y1="0" x2="64" y2="64"><stop stopColor="#0056D2"/><stop offset="1" stopColor="#2563EB"/></linearGradient></defs></svg>
+          Hoppa
+        </div>
         <div className="login__sub">Admin Panel</div>
         <input className="form__input" type="password" placeholder="Password" value={pw} onChange={e => { setPw(e.target.value); setErr(""); }} style={{ textAlign: "center", marginBottom: 16 }} autoFocus />
         <button className="form__btn" type="submit">Login</button>
@@ -666,7 +676,7 @@ function AdminRoutes() {
           <tbody>
             {routes.map(r => (
               <tr key={r.id}>
-                <td>{r.from}</td><td style={{ fontWeight: 600 }}>{r.to}</td><td>{r.rank}</td><td style={{ color: "#FF6B00", fontWeight: 700 }}>${r.fare?.toFixed(2)}</td><td>{r.time}</td>
+                <td>{r.from}</td><td style={{ fontWeight: 600 }}>{r.to}</td><td>{r.rank}</td><td style={{ color: "#0056D2", fontWeight: 700 }}>${r.fare?.toFixed(2)}</td><td>{r.time}</td>
                 <td><button className="btn btn--sm btn--outline" onClick={() => edit(r)}>Edit</button> <button className="btn btn--sm btn--danger" onClick={() => del(r.id)}>Del</button></td>
               </tr>
             ))}
