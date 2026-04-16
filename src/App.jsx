@@ -401,31 +401,46 @@ function RouteMap({ from, to }) {
     const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false });
     mapRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-    }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
 
     // Origin marker (blue)
-    L.circleMarker(origin, { radius: 8, color: "#0056D2", fillColor: "#0056D2", fillOpacity: 1, weight: 2 })
+    L.circleMarker(origin, { radius: 8, color: "#fff", fillColor: "#0056D2", fillOpacity: 1, weight: 3 })
       .addTo(map).bindPopup(`<b>Pickup:</b> ${from}`);
 
     // Destination marker (green)
-    L.circleMarker(dest, { radius: 8, color: "#059669", fillColor: "#059669", fillOpacity: 1, weight: 2 })
+    L.circleMarker(dest, { radius: 8, color: "#fff", fillColor: "#059669", fillOpacity: 1, weight: 3 })
       .addTo(map).bindPopup(`<b>Destination:</b> ${to}`);
 
-    // Route line
-    L.polyline([origin, dest], { color: "#0056D2", weight: 3, opacity: 0.7, dashArray: "8, 8" }).addTo(map);
+    // Fetch actual road route from OSRM (free)
+    const url = `https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
 
-    // Fit bounds to show both markers
-    const bounds = L.latLngBounds([origin, dest]);
-    map.fitBounds(bounds, { padding: [30, 30] });
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data.routes && data.routes[0]) {
+          const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          L.polyline(coords, { color: "#0056D2", weight: 4, opacity: 0.8 }).addTo(map);
+          map.fitBounds(L.latLngBounds(coords), { padding: [30, 30] });
+        } else {
+          // Fallback: straight line
+          L.polyline([origin, dest], { color: "#0056D2", weight: 3, dashArray: "8,8" }).addTo(map);
+          map.fitBounds(L.latLngBounds([origin, dest]), { padding: [30, 30] });
+        }
+      })
+      .catch(() => {
+        // Fallback if OSRM is down
+        L.polyline([origin, dest], { color: "#0056D2", weight: 3, dashArray: "8,8" }).addTo(map);
+        map.fitBounds(L.latLngBounds([origin, dest]), { padding: [30, 30] });
+      });
 
+    // Temp bounds while route loads
+    map.fitBounds(L.latLngBounds([origin, dest]), { padding: [30, 30] });
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
     return () => { map.remove(); mapRef.current = null; };
   }, [from, to]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: 220, borderRadius: 10 }} />;
+  return <div ref={containerRef} style={{ width: "100%", height: 250, borderRadius: 10 }} />;
 }
 
 function RouteCard({ route: r }) {
